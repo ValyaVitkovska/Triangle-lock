@@ -659,143 +659,378 @@ const SN=(()=>{
 function toggleMute(){muted=!muted;el('muteBtn').textContent=muted?'🔈':'🔊'}
 
 // ══════════════════════════════════════════
-// 3. TASK GENERATORS
+// 3. TASK GENERATORS — богато разнообразие
 // ══════════════════════════════════════════
 
-// Level 1: Thales theorem
-function gTh(){
-  let AD,DB,AE,EC,tries=0;
+// ── Генерира пропорция a/b = c/d с различни числа ──
+function makeProp(minV=2,maxV=12){
+  let a,b,c,d,tries=0;
   do{
-    AD=rI(2,10);DB=rI(2,10);AE=rI(2,10);
-    EC=Math.round(AE*DB/AD);tries++;
-  }while((AD*EC!==DB*AE||EC<1)&&tries<300);
-  // Verify: AD/DB = AE/EC must be exact
-  if(AD*EC!==DB*AE){AD=4;DB=6;AE=6;EC=9}
-  return{
-    tp:'thales',tn:'Теорема на Талес',
+    let p=rI(minV,maxV-1),q=rI(p+1,maxV);
+    let g=(function gc(x,y){return y?gc(y,x%y):x})(p,q);p/=g;q/=g;
+    let k1=rI(2,5),k2=rI(2,5);while(k2===k1)k2=rI(2,5);
+    a=p*k1;b=q*k1;c=p*k2;d=q*k2;tries++;
+  }while((a===b||a===c||a===d||b===c||b===d||c===d)&&tries<300);
+  return{a,b,c,d};
+}
+
+// ══ НИВО 1: ТЕОРЕМА НА ТАЛЕС (6 подтипа) ══════════════════════
+
+// 1а: DE∥BC в триъгълник — намери EC
+function gTh_findEC(){
+  let pr=makeProp(2,10);
+  let AD=pr.a,DB=pr.b,AE=pr.c,EC=pr.d;
+  return{tp:'thales',sub:'1a',tn:'Теорема на Талес',
     q:`△ABC, DE ∥ BC (D ∈ AB, E ∈ AC).\nAD = ${AD}, DB = ${DB}, AE = ${AE}.\nНамерете EC.`,
     a:fr(EC,1),
-    ex:`По Теоремата на Талес: AD/DB = AE/EC\n${AD}/${DB} = ${AE}/EC\nEC = ${AE}·${DB}/${AD} = ${EC}`,
-    sv:{type:'thales',rD:AD/(AD+DB)}
-  }
+    ex:`Теорема на Талес: AD/DB = AE/EC\n${AD}/${DB} = ${AE}/EC\nEC = ${AE}·${DB}/${AD} = ${EC}`,
+    sv:{type:'thales',rD:AD/(AD+DB)}}
 }
 
-// Level 2: Angle bisector
-function gBi(){
-  // Choose ratio p:q and a common factor k
-  let p,q,k,AB,AC,BD,DC,tries=0;
-  do{
-    p=rI(2,5);q=rI(2,5);while(q===p)q=rI(2,5);
-    k=rI(2,4);
-    BD=p*k;DC=q*k;
-    // AB/AC = BD/DC = p/q → pick AC = q*m for integer AB
-    let m=rI(2,5);
-    AC=q*m;AB=p*m;
-    tries++;
-  }while(AB*DC!==AC*BD&&tries<200);
-  if(AB*DC!==AC*BD){p=2;q=3;k=2;BD=4;DC=6;AB=6;AC=9;}
-  return{
-    tp:'bisector',tn:'Ъглополовяща',
+// 1б: Намери DB
+function gTh_findDB(){
+  let pr=makeProp(2,10);
+  let AD=pr.c,DB=pr.d,AE=pr.a,EC=pr.b;
+  return{tp:'thales',sub:'1b',tn:'Теорема на Талес',
+    q:`△ABC, DE ∥ BC (D ∈ AB, E ∈ AC).\nAD = ${AD}, AE = ${AE}, EC = ${EC}.\nНамерете DB.`,
+    a:fr(DB,1),
+    ex:`AD/DB = AE/EC → ${AD}/DB = ${AE}/${EC}\nDB = ${AD}·${EC}/${AE} = ${DB}`,
+    sv:{type:'thales',rD:AD/(AD+DB)}}
+}
+
+// 1в: Дадено AB и AD — намери AE
+function gTh_findAE(){
+  let pr=makeProp(2,9);
+  let AD=pr.a,DB=pr.b,AE=pr.c,EC=pr.d;
+  let AB=AD+DB,AC=AE+EC;
+  return{tp:'thales',sub:'1c',tn:'Теорема на Талес',
+    q:`△ABC, DE ∥ BC (D ∈ AB, E ∈ AC).\nAB = ${AB}, AC = ${AC}, AD = ${AD}.\nНамерете AE.`,
+    a:fr(AE,1),
+    ex:`DE∥BC → AD/AB = AE/AC\n${AD}/${AB} = AE/${AC}\nAE = ${AD}·${AC}/${AB} = ${AE}`,
+    sv:{type:'thales',rD:AD/AB}}
+}
+
+// 1г: Намери AB = AD+DB
+function gTh_findAB(){
+  let pr=makeProp(2,9);
+  let AD=pr.a,DB=pr.b,AE=pr.c,EC=pr.d;
+  let AB=AD+DB;
+  return{tp:'thales',sub:'1d',tn:'Теорема на Талес',
+    q:`△ABC, DE ∥ BC (D ∈ AB, E ∈ AC).\nAD = ${AD}, AE = ${AE}, EC = ${EC}.\nНамерете AB.`,
+    a:fr(AB,1),
+    ex:`AD/DB = AE/EC → DB = AD·EC/AE = ${AD}·${EC}/${AE} = ${DB}\nAB = AD + DB = ${AD} + ${DB} = ${AB}`,
+    sv:{type:'thales',rD:AD/AB}}
+}
+
+// 1д: Трапец ABCD, MN∥AB — намери MN
+function gTh_trapezoid(){
+  let pr=makeProp(2,6);
+  let AM=pr.a,MD=pr.b;
+  let AB=rI(8,18),CD=rI(3,7);
+  while(CD>=AB)CD=rI(3,7);
+  // MN = (AB·AM + CD·MD)/(AM+MD)
+  let num=AB*AM+CD*MD,den=AM+MD;
+  let g=(function gc(x,y){return y?gc(y,x%y):x})(num,den);
+  let MNn=num/g,MNd=den/g;
+  return{tp:'thales',sub:'1e',tn:'Теорема на Талес — трапец',
+    q:`Трапец ABCD (AB ∥ CD). M ∈ AD, N ∈ BC, MN ∥ AB.\nAM = ${AM}, MD = ${MD}, AB = ${AB}, CD = ${CD}.\nНамерете MN.`,
+    a:fr(MNn,MNd),
+    ex:`MN = (AB·AM + CD·MD)/(AM+MD)\n= (${AB}·${AM} + ${CD}·${MD})/${AM+MD}\n= ${num}/${den} = ${fs(fr(MNn,MNd))}`,
+    sv:{type:'trapezoid',rM:AM/(AM+MD),AB,CD}}
+}
+
+// 1е: Обратна теорема — DE ∥ BC ли?
+function gTh_reverse(){
+  let isP=Math.random()<0.5;
+  let pr=makeProp(2,9);
+  let AD=pr.a,DB=pr.b,AE=pr.c,EC_ok=pr.d;
+  let EC=isP?EC_ok:EC_ok+rI(1,3);
+  return{tp:'thales',sub:'1f',tn:'Обратна теорема на Талес',
+    q:`△ABC: D ∈ AB, E ∈ AC.\nAD = ${AD}, DB = ${DB}, AE = ${AE}, EC = ${EC}.\nДали DE ∥ BC?`,
+    isCrit:true,critLabels:['Да','Не'],a:isP?'Да':'Не',
+    ex:`Проверяваме AD·EC = ${AD}·${EC} = ${AD*EC}\nDB·AE = ${DB}·${AE} = ${DB*AE}\n`+
+      (isP?'Равни са → DE ∥ BC ✓':'Различни са → DE ∦ BC ✗'),
+    sv:{type:'thales',rD:AD/(AD+DB)}}
+}
+
+function gTh(){
+  return[gTh_findEC,gTh_findDB,gTh_findAE,gTh_findAB,gTh_trapezoid,gTh_reverse][rI(0,5)]();
+}
+
+// ══ НИВО 2: ЪГЛОПОЛОВЯЩА (6 подтипа) ══════════════════════════
+
+// 2а: Намери BD
+function gBi_findBD(){
+  let pr=makeProp(2,9);
+  let BD=pr.a,DC=pr.b,AB=pr.c,AC=pr.d;
+  return{tp:'bisector',sub:'2a',tn:'Ъглополовяща в △',
     q:`В △ABC, AD е ъглополовяща (D ∈ BC).\nAB = ${AB}, AC = ${AC}, DC = ${DC}.\nНамерете BD.`,
     a:fr(BD,1),
-    ex:`Свойство на ъглополовяща: BD/DC = AB/AC\nBD/${DC} = ${AB}/${AC}\nBD = ${DC}·${AB}/${AC} = ${BD}`,
-    sv:{type:'bisector',rD:BD/(BD+DC)}
-  }
+    ex:`Свойство: BD/DC = AB/AC\nBD/${DC} = ${AB}/${AC}\nBD = ${DC}·${AB}/${AC} = ${BD}`,
+    sv:{type:'bisector',rD:BD/(BD+DC)}}
 }
 
-// Level 3a: Identify similarity criterion from ANGLES → always ЪЪ
-function gIdentAA(){
+// 2б: Намери DC
+function gBi_findDC(){
+  let pr=makeProp(2,9);
+  let BD=pr.a,DC=pr.b,AB=pr.c,AC=pr.d;
+  return{tp:'bisector',sub:'2b',tn:'Ъглополовяща в △',
+    q:`В △ABC, AD е ъглополовяща (D ∈ BC).\nAB = ${AB}, AC = ${AC}, BD = ${BD}.\nНамерете DC.`,
+    a:fr(DC,1),
+    ex:`BD/DC = AB/AC\n${BD}/DC = ${AB}/${AC}\nDC = ${BD}·${AC}/${AB} = ${DC}`,
+    sv:{type:'bisector',rD:BD/(BD+DC)}}
+}
+
+// 2в: Намери AB
+function gBi_findAB(){
+  let pr=makeProp(2,9);
+  let BD=pr.a,DC=pr.b,AB=pr.c,AC=pr.d;
+  return{tp:'bisector',sub:'2c',tn:'Ъглополовяща в △',
+    q:`В △ABC, AD е ъглополовяща (D ∈ BC).\nBD = ${BD}, DC = ${DC}, AC = ${AC}.\nНамерете AB.`,
+    a:fr(AB,1),
+    ex:`BD/DC = AB/AC\n${BD}/${DC} = AB/${AC}\nAB = ${BD}·${AC}/${DC} = ${AB}`,
+    sv:{type:'bisector',rD:BD/(BD+DC)}}
+}
+
+// 2г: Дадено BC — намери BD
+function gBi_fromBC(){
+  let pr=makeProp(2,9);
+  let BD=pr.a,DC=pr.b,AB=pr.c,AC=pr.d;
+  let BC=BD+DC;
+  return{tp:'bisector',sub:'2d',tn:'Ъглополовяща в △',
+    q:`В △ABC, AD е ъглополовяща (D ∈ BC).\nBC = ${BC}, AB = ${AB}, AC = ${AC}.\nНамерете BD.`,
+    a:fr(BD,1),
+    ex:`BD/DC = AB/AC = ${AB}/${AC}\nBD = BC·AB/(AB+AC) = ${BC}·${AB}/${AB+AC} = ${BD}\n(DC = ${BC}−${BD} = ${DC} ✓)`,
+    sv:{type:'bisector',rD:BD/BC}}
+}
+
+// 2д: Намери AC
+function gBi_findAC(){
+  let pr=makeProp(2,9);
+  let BD=pr.a,DC=pr.b,AB=pr.c,AC=pr.d;
+  let BC=BD+DC;
+  return{tp:'bisector',sub:'2e',tn:'Ъглополовяща в △',
+    q:`В △ABC, AD е ъглополовяща (D ∈ BC).\nBC = ${BC}, BD = ${BD}, AB = ${AB}.\nНамерете AC.`,
+    a:fr(AC,1),
+    ex:`DC = BC − BD = ${BC} − ${BD} = ${DC}\nBD/DC = AB/AC → AC = DC·AB/BD = ${DC}·${AB}/${BD} = ${AC}`,
+    sv:{type:'bisector',rD:BD/BC}}
+}
+
+// 2е: Обратно — дали AD е ъглополовяща?
+function gBi_reverse(){
+  let isB=Math.random()<0.5;
+  let pr=makeProp(2,9);
+  let BD=pr.a,DC=pr.b,AB=pr.c,AC=pr.d;
+  let DC2=isB?DC:DC+rI(1,4);
+  return{tp:'bisector',sub:'2f',tn:'Обратно свойство',
+    q:`В △ABC, D ∈ BC.\nAB = ${AB}, AC = ${AC}, BD = ${BD}, DC = ${DC2}.\nДали AD е ъглополовяща на ∠A?`,
+    isCrit:true,critLabels:['Да','Не'],a:isB?'Да':'Не',
+    ex:`Проверяваме BD·AC = ${BD}·${AC} = ${BD*AC}\nDC·AB = ${DC2}·${AB} = ${DC2*AB}\n`+
+      (isB?'Равни са → AD е ъглополовяща ✓':'Различни са → AD не е ъглополовяща ✗'),
+    sv:{type:'bisector',rD:BD/(BD+DC2)}}
+}
+
+function gBi(){
+  return[gBi_findBD,gBi_findDC,gBi_findAB,gBi_fromBC,gBi_findAC,gBi_reverse][rI(0,5)]();
+}
+
+// ══ НИВО 3а: ПРИЗНАК ЪЪ (3 варианта) ══════════════════════════
+
+// ЪЪ1: Два ъгъла директно
+function gIdentAA_direct(){
   let pool=[35,40,45,50,55,60,65,70];
   let A=pool[rI(0,7)],B=pool[rI(0,5)];
   while(A+B>=175)B=pool[rI(0,5)];
-  return{
-    tp:'identAA',tn:'Признак ЪЪ',
+  return{tp:'identAA',sub:'aa1',tn:'Признак ЪЪ',
     q:`△ABC и △DEF: ∠A = ∠D = ${A}°, ∠B = ∠E = ${B}°.\nПо кой признак са подобни?`,
     isCrit:true,critLabels:['ССС','ССЪ','ЪЪ'],a:'ЪЪ',
-    ex:`Два двойки равни ъгъли → Признак ЪЪ.\n(Два ъгъла от единия = два ъгъла от другия)`,
-    sv:{type:'similar',r:0.62}
-  }
+    ex:`∠A=∠D и ∠B=∠E → два ъгъла равни → Признак ЪЪ`,
+    sv:{type:'similar',r:0.62}}
 }
 
-// Level 3b: Identify from proportional sides → ССС
-function gIdentSSS(){
-  let k=rI(2,4),a=rI(3,8),b=rI(3,8),c=rI(3,8);
-  while(a===b||b===c||a===c){b=rI(3,8);c=rI(3,8)}
-  return{
-    tp:'identSSS',tn:'Признак ССС',
+// ЪЪ2: Третият ъгъл следва
+function gIdentAA_third(){
+  let A=rI(3,9)*10,B=rI(2,7)*10;
+  while(A+B>=175)B=rI(2,7)*10;
+  let C=180-A-B;
+  return{tp:'identAA',sub:'aa2',tn:'Признак ЪЪ',
+    q:`В △ABC: ∠A=${A}°, ∠B=${B}°.\nВ △DEF: ∠D=${A}°, ∠F=${C}°.\nПо кой признак са подобни?`,
+    isCrit:true,critLabels:['ССС','ССЪ','ЪЪ'],a:'ЪЪ',
+    ex:`∠C=180°−${A}°−${B}°=${C}°\n∠A=∠D=${A}° и ∠C=∠F=${C}° → Признак ЪЪ`,
+    sv:{type:'similar',r:0.62}}
+}
+
+// ЪЪ3: Ъглите в задача с думи
+function gIdentAA_words(){
+  let ang=[40,50,60,70,80][rI(0,4)];
+  return{tp:'identAA',sub:'aa3',tn:'Признак ЪЪ',
+    q:`△ABC и △DEF. ∠ABC = ∠DEF = ${ang}°.\nИ двата триъгълника са равнобедрени с основен ъгъл ${ang}°.\nПо кой признак са подобни?`,
+    isCrit:true,critLabels:['ССС','ССЪ','ЪЪ'],a:'ЪЪ',
+    ex:`Равнобедрен △: бедрените ъгли са равни.\n∠BAC=∠ACB=∠EDF=∠DFE=${180-2*ang}°\n→ два ъгъла → Признак ЪЪ`,
+    sv:{type:'similar',r:0.65}}
+}
+
+function gIdentAA(){return[gIdentAA_direct,gIdentAA_third,gIdentAA_words][rI(0,2)]()}
+
+// ══ НИВО 3б: ПРИЗНАК ССС (2 варианта) ══════════════════════════
+
+// ССС1: Разпознай
+function gIdentSSS_recog(){
+  let k=rI(2,4),a=rI(3,9),b=rI(3,9),c=rI(3,9);
+  while(a===b||b===c||a===c){b=rI(3,9);c=rI(3,9)}
+  return{tp:'identSSS',sub:'sss1',tn:'Признак ССС',
     q:`△ABC: AB=${a}, BC=${b}, CA=${c}.\n△DEF: DE=${a*k}, EF=${b*k}, FD=${c*k}.\nПо кой признак са подобни?`,
     isCrit:true,critLabels:['ССС','ССЪ','ЪЪ'],a:'ССС',
-    ex:`Трите страни са пропорционални (k=${k}) → Признак ССС.`,
-    sv:{type:'similar',r:0.6}
-  }
+    ex:`DE/AB=${a*k}/${a}=${k}, EF/BC=${b*k}/${b}=${k}, FD/CA=${c*k}/${c}=${k}\nТрите страни пропорционални → Признак ССС`,
+    sv:{type:'similar',r:1/k}}
 }
 
-// Level 3c: Identify from two sides + included angle → ССЪ
-function gIdentSAS(){
-  let k=rI(2,4),a=rI(3,8),b=rI(3,8),ang=[40,50,60,70,80][rI(0,4)];
-  while(a===b){b=rI(3,8)}
-  return{
-    tp:'identSAS',tn:'Признак ССЪ',
+// ССС2: Намери коефициента k
+function gIdentSSS_findK(){
+  let k=rI(2,5),a=rI(2,8),b=rI(2,8);
+  while(a===b)b=rI(2,8);
+  return{tp:'identSSS',sub:'sss2',tn:'Признак ССС — намери k',
+    q:`△ABC ~ △DEF (признак ССС).\nAB=${a}, DE=${a*k}, BC=${b}.\nНамерете k и EF.`,
+    a:fr(b*k,1),
+    ex:`k = DE/AB = ${a*k}/${a} = ${k}\nEF = BC·k = ${b}·${k} = ${b*k}`,
+    sv:{type:'similar',r:1/k}}
+}
+
+function gIdentSSS(){return[gIdentSSS_recog,gIdentSSS_findK][rI(0,1)]()}
+
+// ══ НИВО 3в: ПРИЗНАК ССЪ (2 варианта) ══════════════════════════
+
+// ССЪ1: Разпознай
+function gIdentSAS_recog(){
+  let k=rI(2,4),a=rI(3,9),b=rI(3,9);
+  while(a===b)b=rI(3,9);
+  let ang=[40,50,60,70,80][rI(0,4)];
+  return{tp:'identSAS',sub:'sas1',tn:'Признак ССЪ',
     q:`△ABC: AB=${a}, AC=${b}, ∠A=${ang}°.\n△DEF: DE=${a*k}, DF=${b*k}, ∠D=${ang}°.\nПо кой признак са подобни?`,
     isCrit:true,critLabels:['ССС','ССЪ','ЪЪ'],a:'ССЪ',
-    ex:`Две страни пропорционални (k=${k}) и ъгълът между тях равен → Признак ССЪ.`,
-    sv:{type:'similar',r:0.6}
-  }
+    ex:`DE/AB=${a*k}/${a}=${k}, DF/AC=${b*k}/${b}=${k}\n∠A=∠D=${ang}° (между страните)\n→ Признак ССЪ`,
+    sv:{type:'similar',r:1/k}}
 }
 
-// Level 3d: Find missing side
-function gFindSide(){
+// ССЪ2: Намери страна при ССЪ
+function gIdentSAS_findSide(){
+  let k=rI(2,4),a=rI(3,8),b=rI(3,8);
+  while(a===b)b=rI(3,8);
+  let ang=[40,50,60,70,80][rI(0,4)];
+  return{tp:'identSAS',sub:'sas2',tn:'Признак ССЪ — намери страна',
+    q:`△ABC ~ △DEF (признак ССЪ).\n∠A = ∠D = ${ang}°, AB=${a}, DE=${a*k}, AC=${b}.\nНамерете DF.`,
+    a:fr(b*k,1),
+    ex:`k = DE/AB = ${a*k}/${a} = ${k}\nDF = AC·k = ${b}·${k} = ${b*k}`,
+    sv:{type:'similar',r:1/k}}
+}
+
+function gIdentSAS(){return[gIdentSAS_recog,gIdentSAS_findSide][rI(0,1)]()}
+
+// ══ НИВО 3г + ФИНАЛ: НАМЕРИ СТРАНА / ПЕРИМЕТЪР (4 варианта) ════
+
+// Намери EF
+function gFind_EF(){
   let p=rI(2,4),q=p+rI(1,3);
-  let a=rI(3,8)*p,b=rI(3,8)*p;
+  let a=rI(3,8)*p,b=rI(3,8)*p;while(a===b)b=rI(3,8)*p;
   let de=(a/p)*q,ef=(b/p)*q;
-  de=Math.round(de);ef=Math.round(ef);
-  return{
-    tp:'findSide',tn:'Намери страна',
-    q:`△ABC ~ △DEF (AB/DE = BC/EF).\nAB = ${a}, DE = ${de}, BC = ${b}.\nНамерете EF.`,
+  return{tp:'findSide',sub:'fs1',tn:'Намери страна',
+    q:`△ABC ~ △DEF.\nAB=${a}, DE=${de}, BC=${b}.\nНамерете EF.`,
     a:fr(ef,1),
-    ex:`ABC~DEF → AB/DE = BC/EF\n${a}/${de} = ${b}/EF\nEF = ${b}·${de}/${a} = ${ef}`,
-    sv:{type:'similar',r:q/p}
-  }
+    ex:`AB/DE = BC/EF → ${a}/${de} = ${b}/EF\nEF = ${b}·${de}/${a} = ${ef}`,
+    sv:{type:'similar',r:q/p}}
 }
 
-function gLevel1(){return gTh()}
-function gLevel2(){return gBi()}
+// Намери BC
+function gFind_BC(){
+  let p=rI(2,4),q=p+rI(1,3);
+  let a=rI(3,8)*p,b=rI(3,8)*p;while(a===b)b=rI(3,8)*p;
+  let de=(a/p)*q,ef=(b/p)*q;
+  return{tp:'findSide',sub:'fs2',tn:'Намери страна',
+    q:`△ABC ~ △DEF.\nAB=${a}, DE=${de}, EF=${ef}.\nНамерете BC.`,
+    a:fr(b,1),
+    ex:`AB/DE = BC/EF → ${a}/${de} = BC/${ef}\nBC = ${ef}·${a}/${de} = ${b}`,
+    sv:{type:'similar',r:q/p}}
+}
+
+// Намери FD от три страни
+function gFind_FD(){
+  let p=rI(2,4),q=p+rI(1,3);
+  let a=rI(3,7)*p,c=rI(3,7)*p;while(a===c)c=rI(3,7)*p;
+  let de=(a/p)*q,fd=(c/p)*q;
+  return{tp:'findSide',sub:'fs3',tn:'Намери страна (k)',
+    q:`△ABC ~ △DEF (ССС).\nAB=${a}, CA=${c}, DE=${de}.\nНамерете FD.`,
+    a:fr(fd,1),
+    ex:`k = DE/AB = ${de}/${a} = ${q}/${p}\nFD = CA·k = ${c}·${q}/${p} = ${fd}`,
+    sv:{type:'similar',r:q/p}}
+}
+
+// Периметри
+function gFind_Perim(){
+  let p=rI(2,3),q=p+rI(1,2);
+  let a=rI(3,7)*p,b=rI(3,7)*p,c=rI(3,7)*p;
+  while(a===b||b===c||a===c){b=rI(3,7)*p;c=rI(3,7)*p}
+  let Pa=a+b+c,Pd=Pa*q/p;
+  return{tp:'findSide',sub:'fs4',tn:'Подобност — периметри',
+    q:`△ABC ~ △DEF, k = ${q}/${p}.\nПериметърът на △DEF = ${Pd}.\nНамерете периметъра на △ABC.`,
+    a:fr(Pa,1),
+    ex:`Периметрите са в същото отношение k=${q}/${p}:\nP(ABC) = P(DEF)·${p}/${q} = ${Pd}·${p}/${q} = ${Pa}`,
+    sv:{type:'similar',r:q/p}}
+}
+
+function gFindSide(){return[gFind_EF,gFind_BC,gFind_FD,gFind_Perim][rI(0,3)]()}
+
+// ══ НИВА — обвивки ══════════════════════════════════════════════
+
+function gLevel1(){return gTh()}   // 6 варианта
+function gLevel2(){return gBi()}   // 6 варианта
+
 function gLevel3(){
+  // 4 типа x 2-3 варианта всеки = ~10 подтипа
   let r=Math.random();
-  if(r<0.33)return gIdentAA();
-  if(r<0.55)return gIdentSSS();
-  if(r<0.77)return gIdentSAS();
+  if(r<0.28)return gIdentAA();
+  if(r<0.50)return gIdentSSS();
+  if(r<0.72)return gIdentSAS();
   return gFindSide();
 }
+
 function gFinal(){
-  let r=Math.random();
-  if(r<0.30)return gTh();
-  if(r<0.55)return gBi();
-  if(r<0.72)return gIdentAA();
-  if(r<0.84)return gIdentSSS();
-  if(r<0.92)return gIdentSAS();
-  return gFindSide();
+  // Всичко в един котел
+  let all=[gTh_findEC,gTh_findDB,gTh_findAE,gTh_trapezoid,gTh_reverse,
+           gBi_findBD,gBi_findDC,gBi_findAB,gBi_fromBC,gBi_reverse,
+           gIdentAA_direct,gIdentAA_third,gIdentSSS_recog,gIdentSSS_findK,
+           gIdentSAS_recog,gIdentSAS_findSide,
+           gFind_EF,gFind_BC,gFind_FD,gFind_Perim];
+  return all[rI(0,all.length-1)]();
 }
+
 // ══════════════════════════════════════════
 // TASK ROTATION — no repeated types, no repeated numbers
 // ══════════════════════════════════════════
 
 // Types per level — will be shuffled into a queue and cycled
 const _LEVEL_TYPES = {
-  1: ['thales'],                                    // only one type — vary numbers only
-  2: ['bisector'],                                  // only one type — vary numbers only
-  3: ['identAA','identSSS','identSAS','findSide'],  // 4 types, full rotation
-  4: ['thales','bisector','identAA','identSSS','identSAS','findSide'] // 6 types
+  // Level 1: 6 Thales sub-types rotate fully
+  1: ['1a','1b','1c','1d','1e','1f'],
+  // Level 2: 6 bisector sub-types rotate fully
+  2: ['2a','2b','2c','2d','2e','2f'],
+  // Level 3: 4 main types rotate
+  3: ['aa','sss','sas','fs'],
+  // Final: all sub-types in random order
+  4: ['1a','1b','1e','1f','2a','2b','2d','2f','aa1','aa2','sss1','sss2','sas1','sas2','fs1','fs2','fs3','fs4']
 };
 
 // Generator map — type string → generator function
+// Each type has multiple sub-variants (handled internally)
+// Sub-type key → exact generator
 const _GEN = {
-  thales:    gTh,
-  bisector:  gBi,
-  identAA:   gIdentAA,
-  identSSS:  gIdentSSS,
-  identSAS:  gIdentSAS,
-  findSide:  gFindSide,
+  '1a':gTh_findEC,  '1b':gTh_findDB,  '1c':gTh_findAE,   '1d':gTh_findAB,
+  '1e':gTh_trapezoid, '1f':gTh_reverse,
+  '2a':gBi_findBD,  '2b':gBi_findDC,  '2c':gBi_findAB,   '2d':gBi_fromBC,
+  '2e':gBi_findAC,  '2f':gBi_reverse,
+  'aa':gIdentAA,    'aa1':gIdentAA_direct, 'aa2':gIdentAA_third, 'aa3':gIdentAA_words,
+  'sss':gIdentSSS,  'sss1':gIdentSSS_recog,'sss2':gIdentSSS_findK,
+  'sas':gIdentSAS,  'sas1':gIdentSAS_recog,'sas2':gIdentSAS_findSide,
+  'fs':gFindSide,   'fs1':gFind_EF,   'fs2':gFind_BC,     'fs3':gFind_FD,  'fs4':gFind_Perim,
 };
 
 // State per level: shuffled queue of types + used-numbers history per type
@@ -829,19 +1064,19 @@ function _freshByType(type, lv, maxTries=20){
   if(!st.usedNums[type]) st.usedNums[type] = new Set();
   let used = st.usedNums[type];
   let gen = _GEN[type];
+  if(!gen){console.warn('No generator for type:',type);return gTh_findEC();}
   let tk, key, tries=0;
   do {
     tk = gen();
     key = _numsKey(tk);
     tries++;
   } while(used.has(key) && tries < maxTries);
-  // If pool exhausted, clear half and continue
   if(tries >= maxTries){
     let arr=[...used];
     arr.slice(0,Math.floor(arr.length/2)).forEach(k=>used.delete(k));
   }
   used.add(key);
-  if(used.size > 60) used.delete(used.values().next().value);
+  if(used.size > 80) used.delete(used.values().next().value);
   return tk;
 }
 
@@ -947,6 +1182,75 @@ function drawSVG(tk, containerId){
     s+=`<text x="${B2x-18}" y="${B2y+8}" text-anchor="middle" ${LS} fill="#ff4081">E</text>`;
     s+=`<text x="${C2x+18}" y="${C2y+8}" text-anchor="middle" ${LS} fill="#ff4081">F</text>`;
     s+=`<text x="237" y="190" text-anchor="middle" font-family="serif" font-size="30" fill="#f0c040" opacity=".75">∼</text>`;
+
+  } else if(sv.type==='trapezoid'){
+    // Trapezoid ABCD: AB∥CD, AB bottom (longer), CD top (shorter)
+    // M on AD, N on BC, MN∥AB
+    let rM=Math.max(0.2,Math.min(0.8,sv.rM||0.45));
+    // Vertices: B bottom-left, C bottom-right, D top-right, A top-left
+    // Use a proper trapezoid shape (not rectangle)
+    const TBx=30, TBy=310;   // B
+    const TCx=390, TCy=310;  // C
+    const TDx=310, TDy=60;   // D (top-right, inset)
+    const TAx=110, TAy=60;   // A (top-left, inset)
+    // M on AD: lerp from A to D
+    const TMx=Math.round(TAx+(TDx-TAx)*rM);
+    const TMy=Math.round(TAy+(TDy-TAy)*rM);
+    // N on BC: lerp from B to C (same ratio)
+    const TNx=Math.round(TBx+(TCx-TBx)*rM);  // wrong — N on BC side
+    // N is on segment BC, same height ratio
+    const TNx2=Math.round(TBx+(TCx-TBx)*rM);
+    const TNy2=Math.round(TBy+(TCy-TBy)*rM);
+    // Actually MN∥AB means M on AD and N on BC at same relative height
+    // M at ratio rM from A toward D
+    const MNMx_val=TAx+(TDx-TAx)*rM, MNMy_val=TAy+(TDy-TAy)*rM;
+    const MNNx_val=TBx+(TCx-TBx)*rM, MNNy_val=TBy+(TCy-TBy)*rM;
+    // Wait — N on BC, and BC goes from B(bottom-left) to C(bottom-right)
+    // That's the bottom base, not a leg. Let me fix: ABCD trapezoid
+    // Standard Bulgarian notation: ABCD where AB∥CD
+    // A=top-left, B=top-right, C=bottom-right, D=bottom-left
+    // So AD = left leg, BC = right leg
+    const Ax2=110, Ay2=55;   // A top-left
+    const Bx2=310, By2=55;   // B top-right
+    const Cx2=390, Cy2=305;  // C bottom-right
+    const Dx2=30,  Dy2=305;  // D bottom-left
+    // M on AD (left leg): from A toward D
+    const Mx=Math.round(Ax2+(Dx2-Ax2)*rM);
+    const My=Math.round(Ay2+(Dy2-Ay2)*rM);
+    // N on BC (right leg): from B toward C
+    const Nx=Math.round(Bx2+(Cx2-Bx2)*rM);
+    const Ny=Math.round(By2+(Cy2-By2)*rM);
+    // Draw trapezoid
+    s+=`<polygon points="${Ax2},${Ay2} ${Bx2},${By2} ${Cx2},${Cy2} ${Dx2},${Dy2}"
+        fill="rgba(74,106,138,.09)" stroke="#4a6a8a" stroke-width="2.8" stroke-linejoin="round"/>`;
+    // MN line in cyan
+    s+=`<line x1="${Mx}" y1="${My}" x2="${Nx}" y2="${Ny}"
+        stroke="#00e5ff" stroke-width="3.2" stroke-linecap="round"/>`;
+    // Parallel tick marks on AB (top), MN (middle), DC (bottom)
+    // AB ticks
+    let ABmx=(Ax2+Bx2)/2, ABmy=(Ay2+By2)/2;
+    let MNmx=(Mx+Nx)/2,   MNmy=(My+Ny)/2;
+    let DCmx=(Dx2+Cx2)/2, DCmy=(Dy2+Cy2)/2;
+    let tickH=7;
+    for(let [mx,my,col] of [[ABmx,ABmy,'#8a9bb5'],[MNmx,MNmy,'#00e5ff'],[DCmx,DCmy,'#8a9bb5']]){
+      s+=`<line x1="${mx-14}" y1="${my-tickH}" x2="${mx-14}" y2="${my+tickH}" stroke="${col}" stroke-width="2.2"/>`;
+      s+=`<line x1="${mx+14}" y1="${my-tickH}" x2="${mx+14}" y2="${my+tickH}" stroke="${col}" stroke-width="2.2"/>`;
+    }
+    // Dots at all 6 points
+    for(let [px,py] of [[Ax2,Ay2],[Bx2,By2],[Cx2,Cy2],[Dx2,Dy2],[Mx,My],[Nx,Ny]]){
+      s+=`<circle cx="${px}" cy="${py}" r="4.5" fill="#eef2f7"/>`;
+    }
+    // Labels
+    s+=`<text x="${Ax2-4}" y="${Ay2-14}" text-anchor="middle" ${LS} fill="#eef2f7">A</text>`;
+    s+=`<text x="${Bx2+4}" y="${By2-14}" text-anchor="middle" ${LS} fill="#eef2f7">B</text>`;
+    s+=`<text x="${Cx2+20}" y="${Cy2+7}" text-anchor="start"  ${LS} fill="#eef2f7">C</text>`;
+    s+=`<text x="${Dx2-20}" y="${Dy2+7}" text-anchor="end"    ${LS} fill="#eef2f7">D</text>`;
+    s+=`<text x="${Mx-22}" y="${My+6}"   text-anchor="middle" ${LS} fill="#f0c040">M</text>`;
+    s+=`<text x="${Nx+22}" y="${Ny+6}"   text-anchor="middle" ${LS} fill="#f0c040">N</text>`;
+    // MN∥AB label
+    s+=`<text x="${MNmx}" y="${MNmy-14}" text-anchor="middle" ${LSS} fill="#00e5ff">MN ∥ AB</text>`;
+    // AB∥CD label
+    s+=`<text x="${ABmx}" y="${ABmy-14}" text-anchor="middle" ${LSS} fill="#8a9bb5" opacity="0.8">AB ∥ CD</text>`;
   }
   s+='</svg>';
   let c=el(containerId);if(c)c.innerHTML=s;
