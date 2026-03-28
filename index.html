@@ -776,11 +776,86 @@ function gFinal(){
   if(r<0.92)return gIdentSAS();
   return gFindSide();
 }
+// ══════════════════════════════════════════
+// TASK ROTATION — no repeated types, no repeated numbers
+// ══════════════════════════════════════════
+
+// Types per level — will be shuffled into a queue and cycled
+const _LEVEL_TYPES = {
+  1: ['thales'],                                    // only one type — vary numbers only
+  2: ['bisector'],                                  // only one type — vary numbers only
+  3: ['identAA','identSSS','identSAS','findSide'],  // 4 types, full rotation
+  4: ['thales','bisector','identAA','identSSS','identSAS','findSide'] // 6 types
+};
+
+// Generator map — type string → generator function
+const _GEN = {
+  thales:    gTh,
+  bisector:  gBi,
+  identAA:   gIdentAA,
+  identSSS:  gIdentSSS,
+  identSAS:  gIdentSAS,
+  findSide:  gFindSide,
+};
+
+// State per level: shuffled queue of types + used-numbers history per type
+const _state = {};
+[1,2,3,4].forEach(lv => {
+  _state[lv] = { queue: [], usedNums: {} };
+});
+
+function _shuffle(arr){
+  let a=[...arr];
+  for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+  return a;
+}
+
+function _numsKey(tk){
+  // fingerprint = the numbers in the question (ignores type — type is tracked separately)
+  return (tk.q.match(/\d+/g)||[]).join(',');
+}
+
+function _nextType(lv){
+  let st = _state[lv];
+  if(!st.queue.length){
+    // Refill with a fresh shuffle — guarantees full cycle before any type repeats
+    st.queue = _shuffle(_LEVEL_TYPES[lv]);
+  }
+  return st.queue.shift();
+}
+
+function _freshByType(type, lv, maxTries=20){
+  let st = _state[lv];
+  if(!st.usedNums[type]) st.usedNums[type] = new Set();
+  let used = st.usedNums[type];
+  let gen = _GEN[type];
+  let tk, key, tries=0;
+  do {
+    tk = gen();
+    key = _numsKey(tk);
+    tries++;
+  } while(used.has(key) && tries < maxTries);
+  // If pool exhausted, clear half and continue
+  if(tries >= maxTries){
+    let arr=[...used];
+    arr.slice(0,Math.floor(arr.length/2)).forEach(k=>used.delete(k));
+  }
+  used.add(key);
+  if(used.size > 60) used.delete(used.values().next().value);
+  return tk;
+}
+
+function resetTaskHistory(lv){
+  let lvs = lv ? [lv] : [1,2,3,4];
+  lvs.forEach(l=>{
+    _state[l].queue = [];
+    _state[l].usedNums = {};
+  });
+}
+
 function genTask(lv){
-  if(lv===1)return gLevel1();
-  if(lv===2)return gLevel2();
-  if(lv===3)return gLevel3();
-  return gFinal();
+  let type = _nextType(lv);
+  return _freshByType(type, lv);
 }
 
 // ══════════════════════════════════════════
@@ -923,9 +998,10 @@ function setSoloLevel(n){
   solo.lv=n;
   [1,2,3,4].forEach(i=>{let e=el('slc'+i);if(e)e.classList.toggle('active',i===n)});
   solo.ok=0;solo.no=0;solo.streak=0;solo.total=0;solo.elapsed=0;solo.sessionStart=null;
+  resetTaskHistory(n); // new session for this level = fresh tasks
   uSoloStats();
   if(studentName)soloStartTimer();
-  soloNewQ(); // always load task, timer starts after name
+  soloNewQ();
 }
 
 function uSoloStats(){
@@ -1091,6 +1167,7 @@ function stopAllTimers(){
 
 function startGame(lv){
   G.lv=lv;G.rn=1;G.sc={A:0,B:0,C:0};G.rotIdx=0;
+  resetTaskHistory(); // fresh tasks for new game
   showGameScreen();
   newRound();
 }
@@ -1280,7 +1357,7 @@ function showLevelEndScreen(){
 }
 
 function continueGame(){
-  if(G.lv<4){G.lv++;G.rn=1;showGameScreen();newRound()}
+  if(G.lv<4){G.lv++;G.rn=1;resetTaskHistory(G.lv);showGameScreen();newRound()}
   else{showFinalScreen()}
 }
 
@@ -1325,6 +1402,7 @@ function showFinalScreen(){
 
 function fullReset(){
   G.sc={A:0,B:0,C:0};G.lv=1;G.rn=1;G.rotIdx=0;
+  resetTaskHistory();
   showOnly('teamSetup');
 }
 
