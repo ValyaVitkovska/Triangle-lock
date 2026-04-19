@@ -470,11 +470,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
 
       <div class="q-count-wrap" style="margin-bottom: 24px;">
-        <span class="q-count-lbl">Брой рундове:</span>
+        <span class="q-count-lbl">Брой кръгове:</span>
         <select id="teamRounds" class="q-count-sel">
-          <option value="3">3 РУНДА (Кратка игра)</option>
-          <option value="5" selected>5 РУНДА (Стандартна)</option>
-          <option value="8">8 РУНДА (Епична)</option>
+          <option value="3">3 ВЪПРОСА НА ОТБОР (Общо 9)</option>
+          <option value="5" selected>5 ВЪПРОСА НА ОТБОР (Общо 15)</option>
+          <option value="8">8 ВЪПРОСА НА ОТБОР (Общо 24)</option>
         </select>
       </div>
 
@@ -486,7 +486,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div id="gameScreen" class="screen">
     <div class="game-topbar">
       <div class="gbar-info">
-        <div class="gbar-rnd" id="tRoundDisp">РУНД 1 / 5</div>
+        <div class="gbar-rnd" id="tRoundDisp">КРЪГ 1/5 (Въпрос 1/15)</div>
         <div class="gbar-lv" id="tLevelDisp">НИВО I (10 т.)</div>
       </div>
       <div class="timer-wrap">
@@ -526,7 +526,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div id="tFeedback" class="feedback"></div>
         
         <div class="ctr hid" id="tNextRoundArea">
-           <button class="btn-next" style="max-width: 300px;" onclick="nextTeamRound()">СЛЕДВАЩ РУНД →</button>
+           <button class="btn-next" style="max-width: 300px;" onclick="nextTeamRound()">СЛЕДВАЩ ВЪПРОС →</button>
         </div>
       </div>
       
@@ -606,7 +606,7 @@ function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) 
 // --- MATH & QUESTION GENERATOR ---
 const QuestionGen = {
   getThales(level) {
-    let text, svg, ans;
+    let text, svg, ans, isYesNo = false;
     if(level === 1) {
       let a = randInt(2, 6); let b = randInt(2, 6); let k = randInt(2, 4);
       if(a === b) b++;
@@ -639,6 +639,7 @@ const QuestionGen = {
       if(!isParallel) d += randInt(1, 2);
       text = `Дадено е: OA = ${a}, AB = ${b}, OC = ${c}, CD = ${d}.\nУспоредни ли са правите p и q?\n(Въведи 1 за ДА или 0 за НЕ)`;
       ans = isParallel;
+      isYesNo = true;
       svg = `
         <svg viewBox="0 0 400 300">
           <line x1="50" y1="250" x2="350" y2="50" stroke="var(--tx2)" stroke-width="3" />
@@ -680,7 +681,7 @@ const QuestionGen = {
           <text x="200" y="240" fill="var(--gold)" font-weight="bold">x</text>
         </svg>`;
     }
-    return { text, svg, ans, topic: "ТЕОРЕМА НА ТАЛЕС" };
+    return { text, svg, ans, topic: "ТЕОРЕМА НА ТАЛЕС", isYesNo };
   },
   
   getBisector(level) {
@@ -689,7 +690,7 @@ const QuestionGen = {
     let multiplier = randInt(2, 4);
     let c = m * multiplier; let b = n * multiplier;
 
-    let text, svg, ans;
+    let text, svg, ans, isYesNo = false;
     if (level === 1) {
       text = `Отсечката AL е ъглополовяща в △ABC.\nАко AB = ${c}, AC = ${b} и BL = ${m}, намерете LC (x).`;
       ans = n;
@@ -713,6 +714,7 @@ const QuestionGen = {
       if (!isBisector) n += randInt(1, 2);
       text = `Дадено е: AB = ${c}, AC = ${b}, BL = ${m}, LC = ${n}.\nЪглополовяща ли е отсечката AL на ∠A?\n(Въведи 1 за ДА или 0 за НЕ)`;
       ans = isBisector;
+      isYesNo = true;
       svg = `
         <svg viewBox="0 0 400 300">
           <polygon points="50,250 200,50 350,250" fill="rgba(179,136,255,0.05)" stroke="var(--tx2)" stroke-width="3" stroke-linejoin="round"/>
@@ -749,7 +751,7 @@ const QuestionGen = {
           <text x="175" y="295" fill="var(--cyan)" font-size="16" font-weight="bold">BC = ${bc}</text>
         </svg>`;
     }
-    return { text, svg, ans, topic: "СВОЙСТВО НА ЪГЛОПОЛОВЯЩА" };
+    return { text, svg, ans, topic: "СВОЙСТВО НА ЪГЛОПОЛОВЯЩА", isYesNo };
   },
 
   getSimCriteria(level) {
@@ -757,12 +759,13 @@ const QuestionGen = {
     let a = randInt(3, 6); let b = randInt(4, 7); let c = randInt(5, 8);
     let a1 = a * k, b1 = b * k, c1 = c * k;
 
-    let text, svg, ans;
+    let text, svg, ans, isYesNo = false;
     if (level === 1) {
       let isSimilar = randInt(0, 1);
       if (!isSimilar) c1 += randInt(1, 3);
       text = `△ABC има страни ${a}, ${b}, ${c}.\n△A₁B₁C₁ има страни ${a1}, ${b1}, ${c1}.\nПодобни ли са двата триъгълника?\n(Въведи 1 за ДА или 0 за НЕ)`;
       ans = isSimilar;
+      isYesNo = true;
       svg = `
         <svg viewBox="0 0 400 300">
           <polygon points="50,140 130,50 180,140" fill="rgba(0,230,118,0.1)" stroke="var(--tx2)" stroke-width="2"/>
@@ -813,12 +816,12 @@ const QuestionGen = {
           <text x="290" y="270" fill="var(--cyan)" font-weight="bold">x</text>
         </svg>`;
     }
-    return { text, svg, ans, topic: "ПРИЗНАЦИ ЗА ПОДОБНОСТ" };
+    return { text, svg, ans, topic: "ПРИЗНАЦИ ЗА ПОДОБНОСТ", isYesNo };
   },
 
   getSimProps(level) {
     let k = randInt(2, 4);
-    let text, svg, ans;
+    let text, svg, ans, isYesNo = false;
     
     if (level === 1) {
       let P1 = randInt(10, 25);
@@ -863,11 +866,11 @@ const QuestionGen = {
           <text x="280" y="260" fill="var(--cyan)" font-weight="bold">x</text>
         </svg>`;
     }
-    return { text, svg, ans, topic: "СВОЙСТВА НА ПОДОБНИ △" };
+    return { text, svg, ans, topic: "СВОЙСТВА НА ПОДОБНИ △", isYesNo };
   },
 
   getSimComplex(level) {
-    let text, svg, ans;
+    let text, svg, ans, isYesNo = false;
     if (level === 1) {
       let a = randInt(2, 5); let b = randInt(2, 5); 
       let k = (a + b) / a; 
@@ -933,7 +936,7 @@ const QuestionGen = {
           <text x="195" y="215" fill="var(--cyan)" font-weight="bold">x</text>
         </svg>`;
     }
-    return { text, svg, ans, topic: "ПОДОБНИ ТРИЪГЪЛНИЦИ (ПРИЛОЖЕНИЕ)" };
+    return { text, svg, ans, topic: "ПОДОБНИ ТРИЪГЪЛНИЦИ (ПРИЛОЖЕНИЕ)", isYesNo };
   },
 
   generate(level, type) {
@@ -990,7 +993,7 @@ function startSoloSession() {
   
   sDeck = [];
   const types = ['thales', 'bisector', 'sim_criteria', 'sim_props', 'sim_complex'];
-  let cycles = sTotalQ / 5;
+  let cycles = Math.ceil(sTotalQ / 5);
   for(let i = 0; i < cycles; i++) {
     let cycleArr = [...types];
     shuffleArray(cycleArr);
@@ -1100,18 +1103,19 @@ function closeSoloPopup() {
 
 // --- TEAM MODE LOGIC ---
 let tLevel = 1;
-let tMaxRounds = 5;
-let tCurRound = 0;
+let tMaxRounds = 5; // Това вече означава "Въпроси на отбор"
+let tTotalQuestions = 15;
+let tCurQuestion = 0;
 let tScores = { A: 0, B: 0, C: 0 };
 let tActiveTeam = null;
-let tState = 'wait_claim'; // wait_claim, wait_ans, steal
+let tState = 'wait_claim'; // thinking, roulette, wait_ans, steal_thinking
 let tTimerInt = null;
 let tTimeLeft = 45;
-let tStealInt = null;
 let tDeck = [];
 
 let teamNames = { A: "Отбор А", B: "Отбор Б", C: "Отбор В" };
 let eligibleTeams = ['A', 'B', 'C'];
+let initialRoulettePool = [];
 const ptsMap = {1: 10, 2: 20, 3: 30};
 
 function setTeamLevel(lv) {
@@ -1130,12 +1134,15 @@ function startTeamGame() {
   $('boxC').innerHTML = `${teamNames.C}: <span class="score-val" id="scC">0</span>`;
 
   tMaxRounds = parseInt($('teamRounds').value);
-  tCurRound = 0;
+  tTotalQuestions = tMaxRounds * 3;
+  tCurQuestion = 0;
   tScores = { A: 0, B: 0, C: 0 };
+  initialRoulettePool = [];
   
   tDeck = [];
   const types = ['thales', 'bisector', 'sim_criteria', 'sim_props', 'sim_complex'];
-  for(let i=0; i<3; i++) {
+  let cycles = Math.ceil(tTotalQuestions / 5);
+  for(let i=0; i<cycles; i++) {
     let cycleArr = [...types];
     shuffleArray(cycleArr);
     if(tDeck.length > 0 && tDeck[tDeck.length - 1] === cycleArr[0]) {
@@ -1152,22 +1159,22 @@ function startTeamGame() {
 function abortTeamGame() {
   if(confirm("Сигурни ли сте, че искате да прекратите играта?")) {
     clearInterval(tTimerInt);
-    clearInterval(tStealInt);
     navTo('welc');
   }
 }
 
 function nextTeamRound() {
-  tCurRound++;
-  if(tCurRound > tMaxRounds) {
+  tCurQuestion++;
+  if(tCurQuestion > tTotalQuestions) {
     finishTeamGame();
     return;
   }
   
-  $('tRoundDisp').innerText = `РУНД ${tCurRound} / ${tMaxRounds}`;
+  let currentCycle = Math.ceil(tCurQuestion / 3);
+  $('tRoundDisp').innerText = `КРЪГ ${currentCycle}/${tMaxRounds} (Въпрос ${tCurQuestion}/${tTotalQuestions})`;
   $('tLevelDisp').innerText = `НИВО ${['I','II','III'][tLevel-1]} (${ptsMap[tLevel]} т.)`;
   
-  let nextType = tDeck[tCurRound - 1];
+  let nextType = tDeck[tCurQuestion - 1];
   currentQData = QuestionGen.generate(tLevel, nextType);
   
   $('tTopicBadge').innerText = currentQData.topic;
@@ -1227,10 +1234,23 @@ function startMainTimer(seconds) {
 }
 
 function triggerRoulette() {
-  if(eligibleTeams.length === 0) return;
   clearInterval(tTimerInt);
-  tState = 'roulette';
   
+  if(tState === 'thinking') {
+      if(initialRoulettePool.length === 0) {
+          initialRoulettePool = ['A', 'B', 'C'];
+      }
+      let randIdx = randInt(0, initialRoulettePool.length - 1);
+      tActiveTeam = initialRoulettePool.splice(randIdx, 1)[0];
+  } else if (tState === 'steal_thinking') {
+      if(eligibleTeams.length === 0) return;
+      let randIdx = randInt(0, eligibleTeams.length - 1);
+      tActiveTeam = eligibleTeams[randIdx];
+  } else {
+      return;
+  }
+
+  tState = 'roulette';
   $('tThinkingArea').classList.add('hid');
   $('tFeedback').style.display = 'none';
   $('rouletteDisplay').classList.remove('hid');
@@ -1243,13 +1263,13 @@ function triggerRoulette() {
   
   function spin() {
     ticks++;
-    let randomT = eligibleTeams[randInt(0, eligibleTeams.length - 1)];
+    let displayTeams = (eligibleTeams.length > 0) ? eligibleTeams : ['A','B','C'];
+    let randomT = displayTeams[randInt(0, displayTeams.length - 1)];
     $('rouletteDisplay').innerText = teamNames[randomT];
     
     if(ticks < 20) {
        setTimeout(spin, speed);
     } else {
-       tActiveTeam = randomT;
        $('rouletteDisplay').innerText = "ОТГОВАРЯ: " + teamNames[tActiveTeam];
        $('rouletteDisplay').style.color = "var(--gold)";
        
@@ -1317,6 +1337,14 @@ function checkTeamAns() {
 
 function handleWrongAnswer() {
   eligibleTeams = eligibleTeams.filter(t => t !== tActiveTeam);
+  
+  if (currentQData.isYesNo) {
+    const fb = $('tFeedback');
+    fb.innerHTML += `<br>🔒 При въпроси с Да/Не няма опция за кражба. <span class="correct-ans-show">Правилен отговор: <b>${currentQData.ans === 1 ? 'ДА (1)' : 'НЕ (0)'}</b></span>`;
+    fb.style.display = 'block';
+    endRound();
+    return;
+  }
   
   if(eligibleTeams.length > 0) {
     const fb = $('tFeedback');
